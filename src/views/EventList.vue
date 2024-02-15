@@ -1,33 +1,36 @@
 <script setup>
-  import EventCard from "@/components/EventCard.vue";
-  import EventService from "@/services/EventService.js";
-  import { onMounted, ref, computed, watchEffect } from "vue";
+import EventCard from "@/components/EventCard.vue";
+import EventService from "@/services/EventService.js";
+import { onMounted, ref, computed, watchEffect } from "vue";
+import { useRouter } from "vue-router";
 
-  const props = defineProps(['page'])
+const router = useRouter();
 
-  const events = ref("");
-  const totalEvents = ref(0)
+const props = defineProps(['page'])
 
-  const page = computed(() => props.page)
+const events = ref("");
+const totalEvents = ref(0)
 
-  const hasNextPage = computed(() => {
-    const totalPages = Math.ceil(totalEvents.value / 2)
-    return page.value < totalPages
+const page = computed(() => props.page)
+
+const hasNextPage = computed(() => {
+  const totalPages = Math.ceil(totalEvents.value / 2)
+  return page.value < totalPages
+})
+
+onMounted(() => {
+  watchEffect(() => {
+    events.value = null
+    EventService.getEvents(2, page.value)
+      .then((response) => {
+        events.value = response.data;
+        totalEvents.value = response.headers['x-total-count']
+      })
+      .catch((error) => {
+        router.push({name: 'NetworkError'})
+      });
   })
-
-  onMounted(() => {
-    watchEffect(() => {
-      events.value = null
-      EventService.getEvents(2, page.value)
-        .then((response) => {
-          events.value = response.data;
-          totalEvents.value = response.headers['x-total-count']
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    })
-  });
+});
 </script>
 
 <template>
